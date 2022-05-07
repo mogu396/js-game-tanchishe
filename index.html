@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        html,
+        body{
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: aliceblue;
+        }
+        #app{
+            position: relative;
+            /* border: 1px solid #333; */
+        }
+        .row{
+            overflow: hidden;
+        }
+        .col{
+            float: left;
+            width: 24px;
+            height: 24px;
+            border: 1px solid #333;
+            margin: 1px;
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        function deepClone(target, map = new Map()) {
+            if (typeof target === 'object') {
+                let cloneTarget = new target.constructor();
+                if (map.has(target)) {
+                    return map.get(target);
+                }
+                map.set(target, cloneTarget);
+                for (const key in target) {
+                    cloneTarget[key] = deepClone(target[key], map);
+                }
+                return cloneTarget;
+            } else {
+                return target;
+            }
+        };
+    </script>
+    <script>
+        const div = document.createElement('div')
+        div.setAttribute('id', 'app')
+        document.querySelector('body').appendChild(div)
+    </script>
+    <script>
+        const app = document.querySelector('#app')
+        // game
+        class Game{
+            constructor(options) {
+                // 第一次执行定时器的标志位
+                this.firstForbidden = 0
+                // 旧食物位置
+                this.oldFoodPosition = {}
+                // 游戏状态，为0终止
+                this.status = 1
+                // 地图
+                this.map = ''
+                this.row = options.row
+                this.col = options.col
+                this.init()
+                this.snake = new Snake()
+                this.food = new Food(this)
+                this.start()
+                this.eventBind()
+            }
+
+            init() {
+                this.map = document.createElement('div')
+                this.map.setAttribute('id', 'container')
+                for (let i = 0; i < this.row; i++) {
+                    const row = document.createElement('div')
+                    row.setAttribute('class', 'row')
+                    for(let j = 0 ; j < this.col ; j++){
+                        const col = document.createElement('div')
+                        col.setAttribute('class','col')
+                        row.appendChild(col)
+                    }
+                    this.map.appendChild(row)
+                }
+                app.appendChild(this.map)
+            }
+            start(){
+                this.timer = setInterval(() => {
+                    // debugger
+                    if (!!this.firstForbidden){
+                        this.snake.update()
+                        if(this.status == 0){
+                            clearInterval(this.timer)
+                            alert('gg')
+                            return
+                        }
+                    }
+                    this.clear()
+                    this.snake.render()
+                    this.food.render()
+                    this.firstForbidden++
+                }, 200);
+            }
+            clear(){
+                // for(let i = 0; i < this.row; i++){
+                //     for(let j = 0; j < this.col; j++){
+                //         this.map.querySelectorAll('.row')[i].querySelectorAll('.col')[j].style.backgroundColor = ''
+                //         this.map.querySelectorAll('.row')[i].querySelectorAll('.col')[j].innerHTML = ''
+                //     }
+                // }
+                let length = window.game.snake.oldBody.length
+                if(!!this.firstForbidden){
+                    // for(let i = 0; i < window.game.snake.oldBody.length; i++){
+                    //     this.map.querySelectorAll('.row')[window.game.snake.oldBody[i].row].querySelectorAll('.col')[window.game.snake.oldBody[i].col].style.backgroundColor = ''
+                    // }
+                    console.log(window.game.snake.oldBody[length - 1].row)
+                    this.map.querySelectorAll('.row')[window.game.snake.oldBody[length - 1].row].querySelectorAll('.col')[window.game.snake.oldBody[length - 1].col].style.backgroundColor = ''
+                    console.log(window.game.oldFoodPosition.row,window.game.oldFoodPosition.col)
+                    this.map.querySelectorAll('.row')[window.game.oldFoodPosition.row].querySelectorAll('.col')[window.game.oldFoodPosition.col].innerHTML = ''
+                }
+            }
+            snakeRender(row, col, color){
+                this.map.querySelectorAll('.row')[row].querySelectorAll('.col')[col].style.backgroundColor = color
+            }
+            eventBind(){
+                document.addEventListener('keydown',(e) => {
+                    if(e.code == 'ArrowUp'){
+                        if(this.snake.direction == 'D') return
+                        this.snake.preDirection = 'U'
+                    }
+                    else if(e.code == 'ArrowDown'){
+                        if(this.snake.direction == 'U') return
+                        this.snake.preDirection = 'D'
+                    }
+                    else if(e.code == 'ArrowLeft'){
+                        if(this.snake.direction == 'R') return
+                        this.snake.preDirection = 'L'
+                    }
+                    else if(e.code == 'ArrowRight'){
+                        if(this.snake.direction == 'L') return
+                        this.snake.preDirection = 'R'
+                    }
+                })
+            }
+            foodRender(row, col, content){
+                document.querySelectorAll('.row')[row].querySelectorAll('.col')[col].innerHTML = content
+            }
+        }
+        // snake
+        class Snake{
+            constructor(){
+                this.body = [
+                    {row: 0, col: 7},
+                    {row: 0, col: 6},
+                    {row: 0, col: 5},
+                    {row: 0, col: 4},
+                    {row: 0, col: 3},
+                    {row: 0, col: 2},
+                ],
+                this.oldBody = []
+                this.direction = 'R'
+                this.preDirection = 'R'
+            }
+            render(){
+                window.game.snakeRender(this.body[0].row, this.body[0].col, '#338de6')
+                for(let i = 1; i < this.body.length; i++){
+                    window.game.snakeRender(this.body[i].row, this.body[i].col, 'skyblue')
+                }
+            }
+            update(){
+                this.direction = this.preDirection
+                this.oldBody = deepClone(this.body)
+                switch(this.direction){
+                    case 'U':
+                        this.body.unshift({"row": this.body[0].row - 1, "col": this.body[0].col});
+                        break;
+                    case 'D':
+                        this.body.unshift({"row": this.body[0].row + 1, "col": this.body[0].col});
+                        break;
+                    case 'L':
+                        this.body.unshift({"row": this.body[0].row, "col": this.body[0].col - 1});
+                        break;
+                    case 'R':
+                        this.body.unshift({row: this.body[0].row, col: this.body[0].col + 1})
+                        break
+                }
+                if(!this.borderCheck() || !this.selfCheck()) window.game.status = 0
+                if(this.foodCheck()){
+                    window.game.food = new Food(window.game)
+                }else{
+                    window.game.oldFoodPosition = {row: window.game.food.row, col: window.game.food.col}
+                    this.body.pop()
+                }
+                
+            }
+            borderCheck(){
+                if(this.body[0].row > window.game.row - 1 || this.body[0].row < 0 ||
+                    this.body[0].col > window.game.col - 1 || this.body[0].col < 0){
+                        return false
+                    }else{
+                        return true
+                    }
+            }
+            selfCheck(){
+                for(let i = 1; i < this.body.length; i++){
+                    if(this.body[0].row == this.body[i].row && this.body[0].col == this.body[i].col ){
+                        return false
+                    }
+                }
+                return true
+            }
+            foodCheck(){
+                if(this.body[0].row == window.game.food.row && this.body[0].col == window.game.food.col){
+                    return true
+                }else{
+                    return false
+                }
+            }
+        }
+        // food
+        class Food{
+            constructor(game){
+                this.init(game)
+            }
+            init(game) {
+                // 游戏后期
+                do{
+                    this.row = Math.floor(Math.random() * game.row)
+                    this.col = Math.floor(Math.random() * game.col) 
+                } while(this.positionCheck(game.snake))
+            }
+
+            positionCheck(snake) {
+                for(let i = 0; i < snake.body.length; i++){
+                    if (this.row == snake.body[i].row && this.col == snake.body[i].col) {
+                        return true
+                    }
+                }
+                return false
+            }
+            render(){
+                window.game.foodRender(this.row, this.col, '⭐')
+            }
+        }
+    </script>
+    <script>
+        window.game = new Game({row: 20, col: 20})
+
+    </script>
+</body>
+
+</html>

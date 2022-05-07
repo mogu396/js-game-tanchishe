@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        html,
+        body{
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: aliceblue;
+        }
+
+        #app{
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #container{
+            background-color: #fff;
+            border: 1px solid #333;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .snakeHead,
+        .snakeBody{
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            position: absolute;
+            transition: all .5s;
+        }
+
+        .snakeHead{
+            background-color: #338de6;
+        }
+
+        .snakeBody{
+            background-color: skyblue;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        const app = document.createElement("div");
+        app.setAttribute("id", "app");
+        document.querySelector("body").appendChild(app);
+
+        const container = document.createElement("div");
+        container.setAttribute("id", "container");
+        app.appendChild(container);
+
+        const blockSize = {
+            width: 24,
+            height: 24
+        }
+    </script>
+    <script>
+        class Node {
+            constructor(val) {
+                this.val = val;
+                this.next = null;
+            }
+        }
+
+        class LinkList {
+            constructor(arr) {
+                this.head = new Node(arr[0]);
+                this.dummy = this.head
+                this.tail = null
+                let dummy = this.head;
+                for (let i = 1; i < arr.length; i++) {
+                    let node = new Node(arr[i]);
+                    dummy.next = node;
+                    dummy = node
+                    if (i == arr.length - 1) {
+                        this.tail = node
+                    }
+                }
+            }
+
+            pop() {
+                const lastNode = this.head
+                this.head = this.head.next
+                return lastNode
+            }
+
+            unshift(node) {
+                let newNode = new Node(node)
+                this.tail.next = newNode
+                this.tail = newNode
+            }
+
+            show() {
+                return this.head
+            }
+        }
+
+        class Game{
+            constructor(options) {
+                this.snake = {};
+                this.food = {};
+            }
+            
+            init(options) {
+                container.style.width = options.row * 24 + "px";
+                container.style.height = options.col * 24 + "px";
+                this.snake = new Snake();
+            }
+
+            start() {
+                do {
+                    this.snake.init()
+                    this.eventBind()
+                } while (0);
+                const timer = setInterval(() => {
+                    this.snake.update()
+                    this.snake.render()
+                }, 500);
+            }    
+
+            eventBind() {
+                document.addEventListener("keydown", (e) => {
+                    if (e.code === "ArrowUp") {
+                        if (this.snake.direction === "D") return
+                        this.snake.preDirection = "U"
+                    }
+                    else if(e.code === "ArrowDown") {
+                        if(this.snake.direction === "U") return 
+                        this.snake.preDirection = "D"
+                    }
+                    else if(e.code === "ArrowLeft") {
+                        if(this.snake.direction === "R") return 
+                        this.snake.preDirection = "L"
+                    }
+                    else if(e.code === "ArrowRight") {
+                        if(this.snake.direction === "L") return 
+                        this.snake.preDirection = "R"
+                    }
+                })
+            }
+        }
+
+        class Snake{
+            constructor() {
+                this.body = new LinkList([
+                    {row: 1, col: 2, element:''},
+                    {row: 1, col: 3, element:''},
+                    {row: 1, col: 4, element:''},
+                    {row: 1, col: 5, element:''},
+                    {row: 1, col: 6, element:''},
+                    {row: 1, col: 7, element:''},
+                    
+                    // {row: 1, col: 7, element:''},
+                    // {row: 1, col: 6, element:''},
+                    // {row: 1, col: 5, element:''},
+                    // {row: 1, col: 4, element:''},
+                    // {row: 1, col: 3, element:''},
+                    // {row: 1, col: 2, element:''},
+                ]),
+                this.direction = "R",
+                this.preDirection = "R",
+                this.lastSnakeBodyNodeRow = 0,
+                this.lastSnakeBodyNodeRow = 0,
+                this.bodyCache = []
+            }
+
+            init() {
+                this.snakeHeadInit("append")
+                this.snakeBodyInit()
+                console.log(this.body)
+            }
+
+            snakeHeadInit(addMethod) {
+                let snakeHead = document.createElement("div");
+                snakeHead.className = "snakeHead";
+                snakeHead.style.top = this.body.tail.val.row * 24 + "px";
+                snakeHead.style.left = this.body.tail.val.col * 24 + "px";
+                this.body.tail.val.element = snakeHead;
+                if (addMethod == "append") {
+                    container.appendChild(snakeHead);
+                }
+                else if(addMethod == "prepend") {
+                    container.prepend(snakeHead);
+                }
+            }
+
+            snakeBodyInit() {
+                while(this.body.dummy.next){
+                    let snakeBody = document.createElement("div");
+                    snakeBody.className = 'snakeBody';
+                    snakeBody.style.top = this.body.dummy.val.row * 24 + "px"
+                    snakeBody.style.left = this.body.dummy.val.col * 24 + "px"
+                    this.body.dummy.val.element = snakeBody
+                    container.appendChild(snakeBody);
+                    this.body.dummy = this.body.dummy.next
+                }
+            }
+
+            render() {
+                this.body.tail.val.element.style.top = this.body.tail.val.row * 24 + "px"
+                this.body.tail.val.element.style.left = this.body.tail.val.col * 24 + "px"
+            }
+
+            update() {
+                this.direction = this.preDirection;
+                let lastSnakeBodyNode = this.body.pop();
+                lastSnakeBodyNode.next = null;
+                switch (this.direction) {
+                    case "U":
+                        lastSnakeBodyNode.val.row = this.body.tail.val.row - 1;
+                        lastSnakeBodyNode.val.col = this.body.tail.val.col;
+                        break;
+                    case "D":
+                        lastSnakeBodyNode.val.row = this.body.tail.val.row + 1;
+                        lastSnakeBodyNode.val.col = this.body.tail.val.col;
+                        break;
+                    case "L":
+                        lastSnakeBodyNode.val.row = this.body.tail.val.row;
+                        lastSnakeBodyNode.val.col = this.body.tail.val.col - 1;
+                        break;
+                    case "R":
+                        lastSnakeBodyNode.val.row = this.body.tail.val.row;
+                        lastSnakeBodyNode.val.col = this.body.tail.val.col + 1;
+                        break;
+                }
+                this.body.tail.val.element.setAttribute("class", "snakeBody")
+                this.body.unshift(lastSnakeBodyNode.val);
+                this.body.tail.val.element.setAttribute("class", "snakeHead")
+            }
+        }
+    </script>
+    <script>
+        // debugger
+        window.game = new Game();
+        game.init({row: 20, col: 20});
+        game.start()
+    </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        // 链表节点
+        class Node {
+            constructor(val) {
+                this.val = val;
+                this.next = null;
+            }
+        }
+
+        class LinkList {
+            constructor(arr) {
+                this.head = new Node(arr[0]);
+                this.tail = null
+                let dummy = this.head;
+                for (let i = 1; i < arr.length; i++) {
+                    let node = new Node(arr[i]);
+                    dummy.next = node;
+                    dummy = node
+                    if (i == arr.length - 1) {
+                        this.tail = node
+                    }
+                }
+            }
+
+            // insert(node) {
+            //     let newNode = new Node(node)
+            //     this.tail.next = newNode
+            //     this.tail = newNode
+            // }
+
+            pop() {
+                const lastNode = this.head
+                this.head = this.head.next
+                return lastNode
+            }
+
+            delete() {
+
+            }
+
+            unshift(node) {
+                let newNode = new Node(node)
+                this.tail.next = newNode
+                this.tail = newNode
+            }
+
+            show() {
+                return this.head
+            }
+        }
+
+        // const body = [
+        //     { row: 1, col: 7, element: '' },
+        //     { row: 1, col: 6, element: '' },
+        //     { row: 1, col: 5, element: '' },
+        // ]
+        const body = [1,2,3
+            // { row: 1, col: 4, element: '' },
+            // { row: 1, col: 5, element: '' },
+            // { row: 1, col: 6, element: '' },
+            // { row: 1, col: 7, element: '' },
+        ]
+
+        // debugger
+        const list = new LinkList(body)
+        // console.log(list,'first')
+        // list.insert( { row: 1, col: 1, element: '' },)
+        // console.log(list,'after pop')
+    </script>
+</body>
+
+</html>
