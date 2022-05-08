@@ -38,7 +38,7 @@
             height: 24px;
             border-radius: 50%;
             position: absolute;
-            transition: all .5s;
+            /* transition: all .5s; */
         }
 
         .snakeHead{
@@ -107,12 +107,15 @@
         }
 
         class Game{
-            constructor(options) {
+            constructor() {
                 this.snake = {};
                 this.food = {};
+                this.status = 1;
             }
             
             init(options) {
+                this.row = options.row;
+                this.col = options.col;
                 container.style.width = options.row * 24 + "px";
                 container.style.height = options.col * 24 + "px";
                 this.snake = new Snake();
@@ -120,32 +123,37 @@
 
             start() {
                 do {
-                    this.snake.init()
-                    this.eventBind()
+                    this.snake.init();
+                    this.eventBind();
                 } while (0);
-                const timer = setInterval(() => {
-                    this.snake.update()
-                    this.snake.render()
-                }, 500);
+                this.timer = setInterval(() => {
+                    this.snake.update();
+                    if (this.status == 0) {
+                        clearInterval(this.timer)
+                        alert("gg")
+                        return
+                    }
+                    this.snake.render();
+                }, 400);
             }    
 
             eventBind() {
                 document.addEventListener("keydown", (e) => {
                     if (e.code === "ArrowUp") {
-                        if (this.snake.direction === "D") return
-                        this.snake.preDirection = "U"
+                        if (this.snake.direction === "D") return;
+                        this.snake.preDirection = "U";
                     }
                     else if(e.code === "ArrowDown") {
-                        if(this.snake.direction === "U") return 
-                        this.snake.preDirection = "D"
+                        if(this.snake.direction === "U") return ;
+                        this.snake.preDirection = "D";
                     }
                     else if(e.code === "ArrowLeft") {
-                        if(this.snake.direction === "R") return 
-                        this.snake.preDirection = "L"
+                        if(this.snake.direction === "R") return ;
+                        this.snake.preDirection = "L";
                     }
                     else if(e.code === "ArrowRight") {
-                        if(this.snake.direction === "L") return 
-                        this.snake.preDirection = "R"
+                        if(this.snake.direction === "L") return ;
+                        this.snake.preDirection = "R";
                     }
                 })
             }
@@ -176,9 +184,9 @@
             }
 
             init() {
-                this.snakeHeadInit("append")
-                this.snakeBodyInit()
-                console.log(this.body)
+                this.snakeHeadInit("append");
+                this.snakeBodyInit();
+                // console.log(this.body);
             }
 
             snakeHeadInit(addMethod) {
@@ -199,20 +207,21 @@
                 while(this.body.dummy.next){
                     let snakeBody = document.createElement("div");
                     snakeBody.className = 'snakeBody';
-                    snakeBody.style.top = this.body.dummy.val.row * 24 + "px"
-                    snakeBody.style.left = this.body.dummy.val.col * 24 + "px"
-                    this.body.dummy.val.element = snakeBody
+                    snakeBody.style.top = this.body.dummy.val.row * 24 + "px";
+                    snakeBody.style.left = this.body.dummy.val.col * 24 + "px";
+                    this.body.dummy.val.element = snakeBody;
                     container.appendChild(snakeBody);
-                    this.body.dummy = this.body.dummy.next
+                    this.body.dummy = this.body.dummy.next;
                 }
             }
 
             render() {
-                this.body.tail.val.element.style.top = this.body.tail.val.row * 24 + "px"
-                this.body.tail.val.element.style.left = this.body.tail.val.col * 24 + "px"
+                this.body.tail.val.element.style.top = this.body.tail.val.row * 24 + "px";
+                this.body.tail.val.element.style.left = this.body.tail.val.col * 24 + "px";
             }
 
             update() {
+                
                 this.direction = this.preDirection;
                 let lastSnakeBodyNode = this.body.pop();
                 lastSnakeBodyNode.next = null;
@@ -234,9 +243,23 @@
                         lastSnakeBodyNode.val.col = this.body.tail.val.col + 1;
                         break;
                 }
-                this.body.tail.val.element.setAttribute("class", "snakeBody")
-                this.body.unshift(lastSnakeBodyNode.val);
-                this.body.tail.val.element.setAttribute("class", "snakeHead")
+                if (!this.borderCheck()) {
+                    window.game.status = 0
+                } else {
+                    this.body.tail.val.element.setAttribute("class", "snakeBody")
+                    this.body.unshift(lastSnakeBodyNode.val);
+                    this.body.tail.val.element.setAttribute("class", "snakeHead")
+                }
+                
+            }
+
+            borderCheck() {
+                if (this.body.tail.val.row >= window.game.row - 1 || this.body.tail.val.row <= 0 ||
+                    this.body.tail.val.col >= window.game.col - 1 || this.body.tail.val.col <= 0) {
+                        return false
+                    } else {
+                        return true
+                    }
             }
         }
     </script>
