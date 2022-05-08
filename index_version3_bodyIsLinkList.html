@@ -38,7 +38,7 @@
             height: 24px;
             border-radius: 50%;
             position: absolute;
-            /* transition: all .5s; */
+            transition: all .5s;
         }
 
         .snakeHead{
@@ -180,13 +180,17 @@
                 this.preDirection = "R",
                 this.lastSnakeBodyNodeRow = 0,
                 this.lastSnakeBodyNodeRow = 0,
-                this.bodyCache = []
+                this.bodyMap = new Map();
             }
 
             init() {
                 this.snakeHeadInit("append");
                 this.snakeBodyInit();
-                // console.log(this.body);
+                console.log(this.body,'init')
+                while (this.body.dummy) {
+                    this.bodyMap.set(`${this.body.dummy.val.row}${this.body.dummy.val.col}`, this.body.dummy.val)
+                    this.body.dummy = this.body.dummy.next;
+                }
             }
 
             snakeHeadInit(addMethod) {
@@ -213,6 +217,7 @@
                     container.appendChild(snakeBody);
                     this.body.dummy = this.body.dummy.next;
                 }
+                this.body.dummy = this.body.head
             }
 
             render() {
@@ -224,6 +229,7 @@
                 
                 this.direction = this.preDirection;
                 let lastSnakeBodyNode = this.body.pop();
+                this.bodyMap.delete(`${lastSnakeBodyNode.val.row}${lastSnakeBodyNode.val.col}`)
                 lastSnakeBodyNode.next = null;
                 switch (this.direction) {
                     case "U":
@@ -243,12 +249,13 @@
                         lastSnakeBodyNode.val.col = this.body.tail.val.col + 1;
                         break;
                 }
-                if (!this.borderCheck()) {
+                if (!this.borderCheck() || !this.selfCheck(lastSnakeBodyNode)) {
                     window.game.status = 0
                 } else {
                     this.body.tail.val.element.setAttribute("class", "snakeBody")
                     this.body.unshift(lastSnakeBodyNode.val);
                     this.body.tail.val.element.setAttribute("class", "snakeHead")
+                    this.bodyMap.set(`${lastSnakeBodyNode.val.row}${lastSnakeBodyNode.val.col}`, lastSnakeBodyNode.val)
                 }
                 
             }
@@ -261,10 +268,18 @@
                         return true
                     }
             }
+
+            selfCheck(newSnakeHead) {
+                console.log(`${newSnakeHead.val.row}${newSnakeHead.val.col}`)
+                if (this.bodyMap.has(`${newSnakeHead.val.row}${newSnakeHead.val.col}`)) {
+                    return false
+                } else {
+                    return true
+                }
+            }
         }
     </script>
     <script>
-        // debugger
         window.game = new Game();
         game.init({row: 20, col: 20});
         game.start()
