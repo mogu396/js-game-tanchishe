@@ -33,12 +33,13 @@
         }
 
         .snakeHead,
-        .snakeBody{
+        .snakeBody,
+        .food{
             width: 24px;
             height: 24px;
             border-radius: 50%;
             position: absolute;
-            transition: all .5s;
+            /* transition: all .5s; */
         }
 
         .snakeHead{
@@ -59,11 +60,6 @@
         const container = document.createElement("div");
         container.setAttribute("id", "container");
         app.appendChild(container);
-
-        const blockSize = {
-            width: 24,
-            height: 24
-        }
     </script>
     <script>
         class Node {
@@ -73,36 +69,53 @@
             }
         }
 
-        class LinkList {
+        class LinkedList {
             constructor(arr) {
+                this.count = 1
                 this.head = new Node(arr[0]);
-                this.dummy = this.head
-                this.tail = null
+                this.dummy = this.head;
+                this.tail = null;
                 let dummy = this.head;
                 for (let i = 1; i < arr.length; i++) {
+                    this.count++
                     let node = new Node(arr[i]);
                     dummy.next = node;
-                    dummy = node
+                    dummy = node;
                     if (i == arr.length - 1) {
-                        this.tail = node
+                        this.tail = node;
                     }
                 }
             }
 
-            pop() {
-                const lastNode = this.head
-                this.head = this.head.next
-                return lastNode
+            fakeShift() {
+                const lastNode = this.head;
+                lastNode.next = null;
+                return lastNode;
             }
 
             unshift(node) {
-                let newNode = new Node(node)
-                this.tail.next = newNode
-                this.tail = newNode
+                this.count++;
+                node.next = this.head;
+                this.head = node;
             }
 
-            show() {
-                return this.head
+            shift() {
+                const lastNode = this.head;
+                this.head = this.head.next;
+                lastNode.next = null;
+                this.count--;
+                return lastNode;
+            }
+
+            push(node) {
+                let newNode = new Node(node);
+                this.tail.next = newNode;
+                this.count++;
+                this.tail = newNode;
+            }
+
+            size() {
+                return this.count;
             }
         }
 
@@ -110,7 +123,14 @@
             constructor() {
                 this.snake = {};
                 this.food = {};
+                // 游戏状态
                 this.status = 1;
+                this.row = 0;
+                this.col = 0;
+                // 第一次禁止运行标志
+                this.firstForbiddenFlag = 0
+                // 剩余空间
+                this.remainArr = []
             }
             
             init(options) {
@@ -119,22 +139,41 @@
                 container.style.width = options.row * 24 + "px";
                 container.style.height = options.col * 24 + "px";
                 this.snake = new Snake();
+                this.food = new Food();
             }
 
             start() {
                 do {
                     this.snake.init();
+                    for (let i = 0; i < this.row; i++) {
+                        for (let j = 0; j < this.col; j++) {
+                            if (this.snake.bodyArr.indexOf(`${i}-${j}`) === -1) {
+                                this.remainArr.push(`${i}-${j}`);
+                            }
+                        }
+                    }
+                    // debugger
+                    this.food.init(this);
                     this.eventBind();
                 } while (0);
                 this.timer = setInterval(() => {
-                    this.snake.update();
-                    if (this.status == 0) {
-                        clearInterval(this.timer)
-                        alert("gg")
-                        return
+                    if (!!this.firstForbiddenFlag) {
+                        this.snake.update();
+                        if (this.status == 0) {
+                            clearInterval(this.timer);
+                            if(this.snake.condition == 1){
+                                alert('bordercheck');
+                            } else if (this.snake.condition ==2) {
+                                alert('selfcheck')
+                            }else {
+                                alert('gg');
+                            }
+                            return;
+                        }
+                        this.snake.render();
                     }
-                    this.snake.render();
-                }, 400);
+                    this.firstForbiddenFlag++;
+                }, 200);
             }    
 
             eventBind() {
@@ -161,34 +200,24 @@
 
         class Snake{
             constructor() {
-                this.body = new LinkList([
-                    {row: 1, col: 2, element:''},
-                    {row: 1, col: 3, element:''},
-                    {row: 1, col: 4, element:''},
-                    {row: 1, col: 5, element:''},
-                    {row: 1, col: 6, element:''},
-                    {row: 1, col: 7, element:''},
-                    
-                    // {row: 1, col: 7, element:''},
-                    // {row: 1, col: 6, element:''},
-                    // {row: 1, col: 5, element:''},
-                    // {row: 1, col: 4, element:''},
-                    // {row: 1, col: 3, element:''},
-                    // {row: 1, col: 2, element:''},
+                this.body = new LinkedList([
+                    {row: 1, col: 2, element:""},
+                    {row: 1, col: 3, element:""},
+                    {row: 1, col: 4, element:""},
+                    {row: 1, col: 5, element:""},
+                    {row: 1, col: 6, element:""},
+                    {row: 1, col: 7, element:""},
                 ]),
                 this.direction = "R",
                 this.preDirection = "R",
-                this.lastSnakeBodyNodeRow = 0,
-                this.lastSnakeBodyNodeRow = 0,
-                this.bodyMap = new Map();
+                this.bodyArr = [];
             }
 
             init() {
                 this.snakeHeadInit("append");
                 this.snakeBodyInit();
-                console.log(this.body,'init')
                 while (this.body.dummy) {
-                    this.bodyMap.set(`${this.body.dummy.val.row}${this.body.dummy.val.col}`, this.body.dummy.val)
+                    this.bodyArr.push(`${this.body.dummy.val.row}-${this.body.dummy.val.col}`)
                     this.body.dummy = this.body.dummy.next;
                 }
             }
@@ -217,7 +246,7 @@
                     container.appendChild(snakeBody);
                     this.body.dummy = this.body.dummy.next;
                 }
-                this.body.dummy = this.body.head
+                this.body.dummy = this.body.head;
             }
 
             render() {
@@ -226,11 +255,14 @@
             }
 
             update() {
-                
+                // debugger    
+                let foodCheckFlag = 1
                 this.direction = this.preDirection;
-                let lastSnakeBodyNode = this.body.pop();
-                this.bodyMap.delete(`${lastSnakeBodyNode.val.row}${lastSnakeBodyNode.val.col}`)
-                lastSnakeBodyNode.next = null;
+                const lastSnakeBodyNode = this.body.shift();
+                const originPosition = {
+                    row: lastSnakeBodyNode.val.row,
+                    col: lastSnakeBodyNode.val.col
+                }
                 switch (this.direction) {
                     case "U":
                         lastSnakeBodyNode.val.row = this.body.tail.val.row - 1;
@@ -249,40 +281,99 @@
                         lastSnakeBodyNode.val.col = this.body.tail.val.col + 1;
                         break;
                 }
-                if (!this.borderCheck() || !this.selfCheck(lastSnakeBodyNode)) {
-                    window.game.status = 0
-                } else {
-                    this.body.tail.val.element.setAttribute("class", "snakeBody")
-                    this.body.unshift(lastSnakeBodyNode.val);
-                    this.body.tail.val.element.setAttribute("class", "snakeHead")
-                    this.bodyMap.set(`${lastSnakeBodyNode.val.row}${lastSnakeBodyNode.val.col}`, lastSnakeBodyNode.val)
+                if (this.foodCheck(lastSnakeBodyNode)) {
+                    const foodInfo = game.food.body;
+                    foodCheckFlag = 0;
+                    this.body.tail.val.element.setAttribute("class", "snakeBody");
+                    this.body.push({row: parseInt(foodInfo.row), col: parseInt(foodInfo.col), element: foodInfo.element});
+                    foodInfo.element.setAttribute("class", "snakeHead");
+                    foodInfo.element.innerHTML = "";
+                    this.body.unshift({next: null, val: {row: parseInt(originPosition.row), col: parseInt(originPosition.col), element: lastSnakeBodyNode.val.element}})
+                    this.bodyArr.push(`${game.food.body.row}-${game.food.body.col}`)
+                    const targetIndex = game.remainArr.indexOf(`${game.food.body.row}-${game.food.body.col}`);
+                    game.remainArr.splice(targetIndex, 1);
+                    window.game.food = new Food();
+                    game.food.init(game);  
                 }
+
+                if (foodCheckFlag) {
+                    if (!this.borderCheck(lastSnakeBodyNode) || !this.selfCheck(lastSnakeBodyNode)) {
+                        window.game.status = 0;
+                    } else {
+                        this.body.tail.val.element.setAttribute("class", "snakeBody");
+                        this.body.push(lastSnakeBodyNode.val);
+                        this.body.tail.val.element.setAttribute("class", "snakeHead");
+
+                        const targetIndex = game.remainArr.indexOf(`${lastSnakeBodyNode.val.row}-${lastSnakeBodyNode.val.col}`)
+                        game.remainArr.splice(targetIndex, 1);
+                        game.remainArr.push(`${this.bodyArr[0].split('-')[0]}-${this.bodyArr[0].split('-')[1]}`);
+                        this.bodyArr.push(`${lastSnakeBodyNode.val.row}-${lastSnakeBodyNode.val.col}`)
+                        this.bodyArr.shift()
+                    }
+                }
+                console.log(this.bodyArr)
+                console.log(game.remainArr)
                 
             }
 
-            borderCheck() {
-                if (this.body.tail.val.row >= window.game.row - 1 || this.body.tail.val.row <= 0 ||
-                    this.body.tail.val.col >= window.game.col - 1 || this.body.tail.val.col <= 0) {
-                        return false
+            borderCheck(newSnakeHead) {
+                if (newSnakeHead.val.row > window.game.row - 1 || newSnakeHead.val.row < 0 ||
+                    newSnakeHead.val.col > window.game.col - 1 || newSnakeHead.val.col < 0) {
+                        this.condition = 1;
+                        return false;
                     } else {
-                        return true
+                        return true;
                     }
             }
 
             selfCheck(newSnakeHead) {
-                console.log(`${newSnakeHead.val.row}${newSnakeHead.val.col}`)
-                if (this.bodyMap.has(`${newSnakeHead.val.row}${newSnakeHead.val.col}`)) {
-                    return false
+                if (this.bodyArr.indexOf(`${newSnakeHead.val.row}-${newSnakeHead.val.col}`) !== -1) {
+                    this.condition = 2;
+                    return false;
                 } else {
-                    return true
+                    return true;
                 }
+            }
+
+            foodCheck(newSnakeHead) {
+                return (newSnakeHead.val.row == game.food.body.row) && (newSnakeHead.val.col == game.food.body.col)
+            }
+        }
+    
+        class Food{
+            constructor() {
+                this.body = {
+                    row: 0,
+                    col: 0,
+                    element: ""
+                }
+            }
+
+            init(game) {
+                // debugger
+                const seed = Math.floor(Math.random() * game.remainArr.length);
+                const target = game.remainArr[seed]
+                this.body.row = target.split('-')[0]
+                this.body.col = target.split('-')[1]
+                this.render(this.body.row, this.body.col);
+            }
+
+            render(row, col) {
+                const foodEl = document.createElement("div");
+                foodEl.className = "food";
+                foodEl.style.top = this.body.row * 24 + "px";
+                foodEl.style.left = this.body.col * 24 + "px";
+                foodEl.innerHTML = "⭐";
+                this.body.element = foodEl
+                container.appendChild(foodEl)
             }
         }
     </script>
     <script>
+        // debugger
         window.game = new Game();
-        game.init({row: 20, col: 20});
-        game.start()
+        game.init({row: 10, col: 10});
+        game.start();
     </script>
 </body>
 </html>

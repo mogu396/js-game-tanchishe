@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        let test = () => {
+            let arr1 = []
+            let arr2 = []
+            let arr3 = []
+            let start = Date.now()
+            for (let i = 0; i < 100000; i++) {
+                arr1.push(i)
+            }
+            let end1 = Date.now()
+            for (let i = 0; i < 100000; i++) {
+                arr2.unshift(i)
+            }
+            let end2 = Date.now()
+            for (let i = 0; i < 100000; i++) {
+                arr3.push(i)
+            }
+            arr3.reverse()
+            let end3 = Date.now()
+            console.log(`100000 times of push cost ${end1 - start} ms`)
+            console.log(`100000 times of unshift cost ${end2 - end1} ms`)
+            console.log(`100000 times of push and reverse cost ${end3 - end2} ms`)
+        }
+
+        test()
+
+// 100000 times of push cost 3 ms
+// 100000 times of unshift cost 913 ms
+// 100000 times of push and reverse cost 3 ms
+
+    </script>
+</body>
+
+</html>
